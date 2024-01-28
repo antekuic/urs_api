@@ -1,0 +1,70 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+  binaryTargets = ["native", "linux-musl"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+
+// User Model
+
+enum Role {
+  STUDENT
+  PROFESSOR
+  SERVICE
+}
+
+model User {
+  id         Int        @id @default(autoincrement())
+  name       String     @db.VarChar(128)
+  surname    String     @db.VarChar(128)
+  email      String     @unique @db.VarChar(256)
+  role       Role       @default(STUDENT) 
+  hash       String     @db.VarChar(512)
+  salt       String     @db.VarChar(512)
+  lectures   Lecture[]
+  attends    Attends[]
+  createdAt  DateTime   @default(now()) @db.Timestamptz()
+  updatedAt  DateTime?  @updatedAt  @db.Timestamptz()
+}
+
+
+model Classroom {
+  id   String     @id @db.VarChar(512)
+  label String    @db.VarChar(128)
+  lectures Lecture[]
+  salt String     @db.VarChar(512)
+  other Json?     @db.JsonB()
+}
+
+model Lecture {
+  id  Int    @id  @default(autoincrement())
+  name String @db.VarChar()
+  start_date  DateTime  @db.Timestamptz()
+  end_date DateTime? @db.Timestamptz()
+  user_id Int
+  user  User  @relation(fields: [user_id], references: [id])
+  class_id  String  @db.VarChar(512)
+  class Classroom @relation(fields: [class_id], references: [id])
+  attends Attends[]
+  salt  String  @db.VarChar(512)
+  createdAt  DateTime   @default(now()) @db.Timestamptz()
+  updatedAt  DateTime?  @updatedAt  @db.Timestamptz()
+}
+
+model Attends {
+  id Int @id @default(autoincrement())
+  user_id Int
+  user User @relation(fields: [user_id], references: [id])
+  lecture_id Int
+  lecture Lecture @relation(fields: [lecture_id], references: [id])
+  createdAt DateTime @default(now()) @db.Timestamptz()
+
+  @@unique([user_id, lecture_id])
+}
